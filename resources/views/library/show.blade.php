@@ -128,6 +128,7 @@
 
                     </div>
 
+                    <!-- Buttons -->
                     <div class="mt-5 text-center">
 
                         <a href="{{ route('books.index') }}" class="btn btn-secondary btn-lg px-4">
@@ -151,6 +152,80 @@
 
         </div>
     </div>
+
+    <!-- ⭐ ACTIVITY LOGS SECTION ⭐ -->
+    <h4 class="mt-5 mb-3"><i class="ik ik-clock"></i> Activity Logs</h4>
+
+    @php
+        use App\Models\ActivityLog;
+
+        $logs = ActivityLog::where('model', App\Models\Book::class)
+            ->where('record_id', $book->isbn)
+            ->latest()
+            ->get();
+    @endphp
+
+    @if($logs->count())
+
+        @foreach($logs as $log)
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-light">
+                    <strong>
+                        <i class="ik ik-refresh-cw text-warning"></i>
+                        {{ ucfirst($log->action) }} By:
+                        <span class="text-primary">{{ $log->user->name ?? 'System' }}</span>
+                    </strong>
+                </div>
+
+                <div class="card-body">
+
+                    @php
+                        $old = $log->old_values ? json_decode($log->old_values, true) : [];
+                        $new = $log->new_values ? json_decode($log->new_values, true) : [];
+                    @endphp
+
+                    {{-- Sentence-based field changes --}}
+                    @if($old && $new)
+                        @foreach($new as $column => $newValue)
+                            <p class="mb-1">
+                                <i class="ik ik-arrow-right text-secondary"></i>
+                                The <strong>{{ ucfirst($column) }}</strong>
+                                "<span class="text-danger">{{ $old[$column] ?? 'null' }}</span>"
+                                changed to
+                                "<span class="text-success">{{ $newValue }}</span>"
+                            </p>
+                        @endforeach
+                    @else
+                        <p class="text-muted">No detailed field changes available.</p>
+                    @endif
+
+                    <hr>
+
+                    {{-- Date and Time boxes --}}
+                    <div class="d-flex gap-3">
+
+                        <div class="p-2 border rounded bg-light">
+                            <i class="ik ik-calendar"></i>
+                            <strong>Date:</strong>
+                            {{ \Carbon\Carbon::parse($log->created_at)->format('d M Y') }}
+                        </div>
+
+                        <div class="p-2 border rounded bg-light">
+                            <i class="ik ik-clock"></i>
+                            <strong>Time:</strong>
+                            {{ \Carbon\Carbon::parse($log->created_at)->format('h:i A') }}
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        @endforeach
+
+    @else
+        <p class="text-muted">No logs found for this book.</p>
+    @endif
+    <!-- ⭐ END LOGS SECTION ⭐ -->
 
 </div>
 @endsection

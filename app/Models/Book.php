@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\LogActivityTrait;   // ✅ This is the correct trait
 
 class Book extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogActivityTrait;   // ✅ Trait applied here
 
     protected $table = 'books';
 
