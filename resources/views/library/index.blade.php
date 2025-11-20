@@ -4,72 +4,67 @@
 @section('title', 'Books')
 
 @push('head')
-    <!-- DataTables CSS -->
-    <link rel="stylesheet" href="{{ asset('plugins/DataTables/datatables.min.css') }}">
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
+<!-- DataTables CSS -->
+<link rel="stylesheet" href="{{ asset('plugins/DataTables/datatables.min.css') }}">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
 
-    <style>
+<style>
 
-        /* ==== ACTION BUTTONS (VIEW / EDIT) ==== */
-        .action-btns {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            min-width: 120px;
-        }
-        .action-btns .btn {
-            width: 40px !important;
-            height: 40px !important;
-            padding: 0 !important;
-            border-radius: 50% !important;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.12);
-        }
-        .action-btns .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.18) !important;
-        }
+    /* Action Buttons */
+    .action-btns {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        min-width: 120px;
+    }
+    .action-btns .btn {
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
 
-        /* ==== DATATABLE BUTTONS ==== */
-        .dt-buttons .dt-button {
-            margin-right: 8px !important;
-            padding: 6px 12px !important;
-            border-radius: 6px !important;
-            font-size: 13px !important;
-            font-weight: 500;
-        }
+    /* Center Header Buttons Styling */
+    .header-btns .dt-button {
+        margin: 0 8px;
+        padding: 6px 14px !important;
+        border-radius: 6px;
+        font-size: 13px;
+    }
 
-        /* ===== CUSTOM BUTTON COLORS ===== */
-        .btn-col-all {
-            background: #28a745 !important;
-            color: white !important;
-        }
-        .btn-col-default {
-            background: #ffc107 !important;
-            color: black !important;
-        }
-        .btn-col-custom {
-            background: #6c757d !important;
-            color: white !important;
-        }
+    /* Export Buttons — bigger & spaced */
+    .export-btns .dt-button {
+        padding: 8px 18px !important;
+        font-size: 14px !important;
+        margin-left: 14px !important;
+        margin-right: 8px !important;
+        border-radius: 6px !important;
+    }
 
-        /* ==== PRINT MODE ==== */
-        @media print {
-            body { background: #fff !important; }
-            .page-header, .card-header .btn, .dt-buttons, .action-btns { display: none !important; }
-            .card { border: none; box-shadow: none; }
-            #books-table th, #books-table td {
-                border: 1px solid #ddd !important;
-                padding: 8px;
-                text-align: center;
-                font-size: 12px;
-            }
-        }
-    </style>
+    /* Button Colors */
+    .btn-col-all     { background:#28a745 !important; color:#fff !important; }
+    .btn-col-default { background:#ffc107 !important; color:#000 !important; }
+    .btn-col-custom  { background:#6c757d !important; color:#fff !important; }
+
+    /* ⭐⭐⭐ Fix: Perfectly Center Header Buttons ⭐⭐⭐ */
+    .header-btns {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    .header-btns .dt-buttons {
+        display: flex !important;
+        justify-content: center !important;
+        width: 100% !important;
+    }
+
+</style>
 @endpush
 
 
@@ -77,68 +72,40 @@
 @section('content')
 <div class="container-fluid">
 
-    <div class="page-header">
-        <div class="row align-items-end">
-            <div class="col-lg-8">
-                <div class="page-header-title">
-                    <i class="ik ik-book bg-blue"></i>
-                    <div class="d-inline">
-                        <h5>Books</h5>
-                        <span class="ml-1 text-muted">Library Catalog</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-4">
-                <nav class="breadcrumb-container" aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="ik ik-home"></i> Home</a></li>
-                        <li class="breadcrumb-item active">Books</li>
-                    </ol>
-                </nav>
-            </div>
-        </div>
-    </div>
-
     @include('include.message')
 
-    <div class="row">
-        <div class="col-md-12">
+    <div class="card">
 
-            <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3>Book List</h3>
+            <a href="{{ route('books.create') }}" class="btn btn-primary btn-sm">Add New Book</a>
+        </div>
 
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3>Book List</h3>
-                    <a href="{{ route('books.create') }}" class="btn btn-primary btn-sm">Add New Book</a>
-                </div>
+        <div class="card-body p-0">
 
-                <div class="card-body p-0">
-
-                    <table id="books-table" class="table table-striped table-bordered display nowrap" width="100%">
-                        <thead class="bg-light">
-                            <tr>
-                                <th>S.No</th>
-                                <th>Title</th>
-                                <th>Author</th>
-                                <th>Genre</th>
-                                <th>ISBN</th>
-                                <th>Publisher</th>
-                                <th>Year</th>
-                                <th>Total Copies</th>
-                                <th>Available</th>
-                                <th>Issued By</th>
-                                <th width="130">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-
-                </div>
-
-            </div>
+            <table id="books-table" class="table table-striped table-bordered display nowrap" width="100%">
+                <thead class="bg-light">
+                    <tr>
+                        <th>S.No</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Genre</th>
+                        <th>ISBN</th>
+                        <th>Publisher</th>
+                        <th>Year</th>
+                        <th>Total Copies</th>
+                        <th>Available</th>
+                        <th>Issued By</th>
+                        <th width="130">Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
 
         </div>
+
     </div>
+
 </div>
 @endsection
 
@@ -165,62 +132,54 @@ $(function () {
         serverSide: true,
         ajax: '{{ route("books.list") }}',
 
-        /* ===== TOP BAR LAYOUT ===== */
+        /* ⭐⭐⭐ FINAL: SCROLL ENABLE ⭐⭐⭐ */
+        scrollY: 450,
+        scrollX: true,
+        scrollCollapse: true,
+        fixedColumns: { left: 1, right: 1 },
+
         dom:
-            "<'row mb-3'<'col-md-6'l>" +
-            "<'col-md-6 d-flex justify-content-end align-items-center gap-2'fB>>" +
+            "<'row mb-3'<'col-md-12 text-center header-btns'B>>" +
+            "<'row mb-3'<'col-md-6'l><'col-md-6 d-flex justify-content-end align-items-center'<'search-container'f><'export-btns ml-3'>>>" +
             "<'row'<'col-12'tr>>" +
             "<'row mt-3'<'col-md-6'i><'col-md-6 d-flex justify-content-end'p>>",
 
-        scrollY: 425,
-        scrollX: true,
-        paging: true,
-        pageLength: 10,
-
-        fixedColumns: { left: 1, right: 1 },
-
-        /* ===== BUTTONS ===== */
         buttons: [
 
+            /* ==== CENTER HEADER BUTTONS ==== */
             {
                 extend: 'colvisGroup',
                 text: 'All Headers',
                 show: ':hidden',
-                className: 'btn-col-all btn-sm'
+                className: 'btn-col-all'
             },
-
             {
                 text: 'Default Headers',
-                className: 'btn-col-default btn-sm',
+                className: 'btn-col-default',
                 action: function (e, dt) {
                     dt.columns().visible(false);
                     dt.columns([0,1,2,4,8,10]).visible(true);
                 }
             },
-
             {
                 extend: 'colvis',
                 text: 'Customize Headers',
-                className: 'btn-col-custom btn-sm'
+                className: 'btn-col-custom'
             },
 
+            /* ==== EXPORT BUTTONS ==== */
             {
                 extend: 'excel',
                 text: 'Excel',
-                className: 'btn-success btn-sm',
-                exportOptions: { columns: ':visible' },
-                title: 'Books_' + new Date().toISOString().slice(0,10)
+                className: 'btn-success export-move'
             },
-
             {
                 extend: 'print',
-                text: 'Print / Save as PDF',
-                className: 'btn-primary btn-sm',
-                exportOptions: { columns: ':visible' }
+                text: 'Print / Save PDF',
+                className: 'btn-primary export-move'
             }
         ],
 
-        /* ===== COLUMNS ===== */
         columns: [
             { data: 'DT_RowIndex', orderable: false, searchable: false },
             { data: 'title' },
@@ -241,14 +200,11 @@ $(function () {
             api.column(0).nodes().each(function (cell, i) {
                 cell.innerHTML = start + i + 1;
             });
-        },
-
-        language: {
-            searchPlaceholder: "Search...",
-            search: ""
         }
-
     });
+
+    // Move Excel & Print into export button div
+    $(".export-move").appendTo(".export-btns");
 
 });
 </script>

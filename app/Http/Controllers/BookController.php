@@ -40,13 +40,7 @@ class BookController extends Controller
                             <i class="ik ik-edit-2"></i>
                         </a>
 
-                        <form method="POST" action="' . route('books.destroy', $id) . '" style="display:inline;">
-                            ' . csrf_field() . method_field('DELETE') . '
-                            <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="return confirm(\'Are you sure?\')">
-                                <i class="ik ik-trash-2"></i>
-                            </button>
-                        </form>
+
                     </div>
                 ';
             })
