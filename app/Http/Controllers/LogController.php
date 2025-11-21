@@ -8,26 +8,31 @@ use Illuminate\Http\Request;
 class LogController extends Controller
 {
     /**
-     * Show ALL logs of the system
+     * Show ALL logs in the system
      * URL: /admin/logs
      */
-    public function index()
+    public function index(Request $request)
     {
+        $action = $request->get('action'); // optional filter: created/updated/deleted
+
         $logs = ActivityLog::with('user')
+            ->when($action, function ($q) use ($action) {
+                return $q->where('action', $action);
+            })
             ->latest()
-            ->paginate(20);   // pagination added
+            ->paginate(20); // pagination
 
         return view('logs.index', compact('logs'));
     }
 
 
     /**
-     * Show logs for a specific item (Book, User, etc)
-     * URL: /logs/{model}/{id}
+     * Show logs for a particular model + record
+     * Example: /logs/App%5CModels%5CBook/9781234
      */
     public function itemLogs($model, $id)
     {
-        $model = urldecode($model);  // required for namespaces
+        $model = urldecode($model); // namespace decoding (App\Models\Book)
 
         $logs = ActivityLog::where('model', $model)
             ->where('record_id', $id)

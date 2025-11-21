@@ -184,24 +184,37 @@
                         $new = $log->new_values ? json_decode($log->new_values, true) : [];
                     @endphp
 
-                    {{-- Sentence-based field changes --}}
-                    @if($old && $new)
+                    {{-- CREATED --}}
+                    @if($log->action == 'created')
+                        <p class="text-success mb-1">
+                            <i class="ik ik-plus-circle"></i>
+                            A new book record was created.
+                        </p>
+                    @endif
+
+                    {{-- UPDATED --}}
+                    @if($log->action == 'updated')
                         @foreach($new as $column => $newValue)
                             <p class="mb-1">
                                 <i class="ik ik-arrow-right text-secondary"></i>
-                                The <strong>{{ ucfirst($column) }}</strong>
-                                "<span class="text-danger">{{ $old[$column] ?? 'null' }}</span>"
-                                changed to
-                                "<span class="text-success">{{ $newValue }}</span>"
+                                <strong>{{ ucfirst($column) }}</strong>:
+                                "<span class="text-danger">{{ $old[$column] }}</span>"
+                                → "<span class="text-success">{{ $newValue }}</span>"
                             </p>
                         @endforeach
-                    @else
-                        <p class="text-muted">No detailed field changes available.</p>
+                    @endif
+
+                    {{-- DELETED --}}
+                    @if($log->action == 'deleted')
+                        <p class="text-danger mb-1">
+                            <i class="ik ik-trash"></i>
+                            This record was deleted.
+                        </p>
                     @endif
 
                     <hr>
 
-                    {{-- Date and Time boxes --}}
+                    {{-- Date & Time --}}
                     <div class="d-flex gap-3">
 
                         <div class="p-2 border rounded bg-light">
