@@ -1,0 +1,51 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Artisan: Serve",
+            "type": "shell",
+            "command": "php artisan serve",
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Artisan: Migrate",
+            "type": "shell",
+            "command": "php artisan migrate",
+            "problemMatcher": []
+        },
+        {
+            "label": "Artisan: Migrate Fresh",
+            "type": "shell",
+            "command": "php artisan migrate:fresh --seed",
+            "problemMatcher": []
+        },
+        {
+            "label": "Artisan: Tinker",
+            "type": "shell",
+            "command": "php artisan tinker",
+            "problemMatcher": []
+        },
+        {
+            "label": "Artisan: Clear Cache",
+            "type": "shell",
+            "command": "php artisan optimize:clear",
+            "problemMatcher": []
+        },
+        {
+            "label": "NPM: Dev",
+            "type": "npm",
+            "script": "dev",
+            "problemMatcher": []
+        },
+        {
+            "label": "Git: Push",
+            "type": "shell",
+            "command": "git push origin feature/base-model-implementation",
+            "problemMatcher": []
+        }
+    ]
+}

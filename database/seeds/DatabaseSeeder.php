@@ -1,5 +1,6 @@
 <?php
 
+use Database\Seeders\BooksTableSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RoleSeeder;
@@ -20,6 +21,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             UserSeeder::class,
             RolePermissionSeeder::class,
+            BooksTableSeeder::class,
         ]);
     }
 }

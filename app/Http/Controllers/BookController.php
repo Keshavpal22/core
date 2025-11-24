@@ -5,47 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use Yajra\DataTables\Facades\DataTables;
 
 class BookController extends Controller
 {
     /**
-     * Show Books List Page
+     * Show Books List Page (AG-GRID VERSION)
      */
     public function index()
     {
-        return view('library.index');
-    }
+        // AG-Grid ko data list me chahiye
+        $books = Book::orderBy('isbn', 'DESC')->get();
 
-    /**
-     * DataTable AJAX List
-     */
-    public function list(Request $request)
-    {
-        $books = Book::orderBy('isbn', 'DESC')->get(); // FIXED
-
-        return DataTables::of($books)
-            ->addIndexColumn()
-            ->addColumn('action', function ($book) {
-
-                $id = $book->isbn; // FIXED
-
-                return '
-                    <div class="action-btns">
-                        <a href="' . route('books.show', $id) . '" class="btn btn-info btn-sm">
-                            <i class="ik ik-eye"></i>
-                        </a>
-
-                        <a href="' . route('books.edit', $id) . '" class="btn btn-success btn-sm">
-                            <i class="ik ik-edit-2"></i>
-                        </a>
-
-
-                    </div>
-                ';
-            })
-            ->rawColumns(['action'])
-            ->make(true);
+        return view('library.index', compact('books'));
     }
 
     /**
@@ -84,7 +55,7 @@ class BookController extends Controller
      */
     public function show($isbn)
     {
-        $book = Book::where('isbn', $isbn)->firstOrFail(); // FIXED
+        $book = Book::where('isbn', $isbn)->firstOrFail();
         return view('library.show', compact('book'));
     }
 
@@ -93,7 +64,7 @@ class BookController extends Controller
      */
     public function edit($isbn)
     {
-        $book = Book::where('isbn', $isbn)->firstOrFail(); // FIXED
+        $book = Book::where('isbn', $isbn)->firstOrFail();
         return view('library.edit', compact('book'));
     }
 
@@ -102,7 +73,7 @@ class BookController extends Controller
      */
     public function update(Request $request, $isbn)
     {
-        $book = Book::where('isbn', $isbn)->firstOrFail(); // FIXED
+        $book = Book::where('isbn', $isbn)->firstOrFail();
 
         $request->validate([
             'title'             => 'required|string|max:255',
@@ -111,7 +82,7 @@ class BookController extends Controller
             'isbn'              => [
                 'required',
                 'integer',
-                Rule::unique('books', 'isbn')->ignore($book->isbn, 'isbn') // FIXED
+                Rule::unique('books', 'isbn')->ignore($book->isbn, 'isbn')
             ],
             'publisher'         => 'required|string|max:150',
             'publication_year'  => 'required|integer|min:1800|max:2099',
@@ -131,7 +102,7 @@ class BookController extends Controller
      */
     public function destroy($isbn)
     {
-        $book = Book::where('isbn', $isbn)->firstOrFail(); // FIXED
+        $book = Book::where('isbn', $isbn)->firstOrFail();
         $book->delete();
 
         return redirect()->route('books.index')

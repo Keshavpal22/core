@@ -8,18 +8,21 @@ class ActivityLog extends Model
 {
     protected $table = 'activity_logs';
 
+    public $timestamps = false; // FIXED — no updated_at column
+
     protected $fillable = [
         'user_id',
         'model',
         'record_id',
         'action',
-        'old_values',
-        'new_values',
+        'old_data',
+        'new_data',
+        'created_at', // optional
     ];
 
     protected $casts = [
-        'old_values' => 'array',
-        'new_values' => 'array',
+        'old_data' => 'array',
+        'new_data' => 'array',
     ];
 
     public function user()

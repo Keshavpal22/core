@@ -2,44 +2,79 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Book;
 use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 
-class LogController extends Controller
+class BookController extends Controller
 {
-    /**
-     * Show ALL logs in the system
-     * URL: /admin/logs
-     */
-    public function index(Request $request)
+    // ---------------------------
+    // CREATE BOOK
+    // ---------------------------
+    public function store(Request $request)
     {
-        $action = $request->get('action'); // optional filter: created/updated/deleted
+        $book = Book::create($request->all());
 
-        $logs = ActivityLog::with('user')
-            ->when($action, function ($q) use ($action) {
-                return $q->where('action', $action);
-            })
-            ->latest()
-            ->paginate(20); // pagination
+        // Log Create Action
+        ActivityLog::create([
+            'user_id'   => auth()->id(),
+            'model'     => Book::class,
+            'record_id' => $book->id,
+            'action'    => 'created',
+            'old_data'  => null,
+            'new_data'  => $book->toArray(),
+            'created_at' => now(),
+        ]);
 
-        return view('logs.index', compact('logs'));
+        return redirect()->back()->with('success', 'Book Created!');
     }
 
-
-    /**
-     * Show logs for a particular model + record
-     * Example: /logs/App%5CModels%5CBook/9781234
-     */
-    public function itemLogs($model, $id)
+    // ---------------------------
+    // UPDATE BOOK
+    // ---------------------------
+    public function update(Request $request, $id)
     {
-        $model = urldecode($model); // namespace decoding (App\Models\Book)
+        $book = Book::findOrFail($id);
+        $old  = $book->toArray(); // old values before update
 
-        $logs = ActivityLog::where('model', $model)
-            ->where('record_id', $id)
-            ->with('user')
-            ->latest()
-            ->get();
+        $book->update($request->all());
+        $new  = $book->toArray(); // new values after update
 
-        return view('logs.item', compact('logs'));
+        // Log Update Action
+        ActivityLog::create([
+            'user_id'   => auth()->id(),
+            'model'     => Book::class,
+            'record_id' => $book->id,
+            'action'    => 'updated',
+            'old_data'  => $old,
+            'new_data'  => $new,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Book Updated!');
+    }
+
+    // ---------------------------
+    // DELETE BOOK
+    // ---------------------------
+    public function destroy($id)
+    {
+        $book = Book::findOrFail($id);
+        $old  = $book->toArray(); // values before delete
+
+        $book->delete();
+
+        // Log Delete Action
+        ActivityLog::create([
+            'user_id'   => auth()->id(),
+            'model'     => Book::class,
+            'record_id' => $id,
+            'action'    => 'deleted',
+            'old_data'  => $old,
+            'new_data'  => null,
+            'created_at' => now(),
+        ]);
+
+        return redirect()->back()->with('success', 'Book Deleted!');
     }
 }
