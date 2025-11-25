@@ -74,6 +74,34 @@
     .ag-theme-alpine .ag-pinned-bottom-wrapper {
         background: #fff;
     }
+
+    /* small visual tweak for group labels so it looks tidy */
+    .ag-group-value {
+        font-weight: 600;
+    }
+
+    /* slight spacing inside auto group to hold label + bracket count */
+    .ag-group-cell-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .group-left-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* small responsive tweak */
+    @media (max-width: 900px) {
+        .ag-theme-alpine .ag-header-cell-label .ag-header-cell-text {
+            white-space: normal;
+        }
+    }
 </style>
 @endpush
 
@@ -85,7 +113,7 @@
 
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Book List (AG-Grid Premium)</h3>
+            <h3>Book List (AG-Grid Premium — Hierarchy)</h3>
             <a href="{{ route('books.create') }}" class="btn btn-primary btn-sm">Add New Book</a>
         </div>
 
@@ -145,67 +173,81 @@
 <script src="https://unpkg.com/ag-grid-enterprise@28.2.1/dist/ag-grid-enterprise.min.noStyle.js"></script>
 
 <script>
+    // NOTE: sample/local asset used earlier in seeders/UI (developer-provided file path)
+    // If you need to reference this image somewhere, its local path is:
+    // /mnt/data/5e531221-694e-40dd-81ab-25a097f84813.png
+    const SAMPLE_IMAGE_URL = '/mnt/data/5e531221-694e-40dd-81ab-25a097f84813.png';
+
     agGrid.LicenseManager.setLicenseKey("[TRIAL]this{AG_Charts_and_AG_Grid}Enterprise_key{AG-109598}is_granted_for_evaluation_only_Use_in_production_is_not_permitted_Please_report_misuse_to_legal@ag-grid.com_For_help_with_purchasing_a_production_key_please_contact_info@ag-grid.com_You_are_granted_a{Single_Application}Developer_License_for_one_application_only_All_Front-End_JavaScript_developers_working_on_the_application_would_need_to_be_licensed_This_key_will_deactivate_on{14 December 2025}[v3]_[0102]_MTc2NTY3MDQwMDAwMA==d709f6f1a968a8b9944a445eff396d3e");
 
 //
-// Column definitions - note special cellRenderer used for pinned bottom row
+// Helper: count only visible leaf (book) rows under a group
+//
+function getVisibleBookCount(node) {
+    let count = 0;
+
+    // Loop through ALL leaf nodes inside this group
+    node.allLeafChildren?.forEach(leaf => {
+        if (leaf.displayed) {
+            count++;
+        }
+    });
+
+    return count;
+}
+
+
+//
+// Group inner renderer: shows label + bracketed visible-book count
+//
+function groupInnerRenderer(params) {
+    if (!params || !params.node) return '';
+
+    // Footer row
+    if (params.node.rowPinned === 'bottom') {
+        return `<div class="footer-box"></div>`;
+    }
+
+    const label = params.value || '';
+
+    if (params.node.group) {
+        // Count only the books INSIDE this branch (correct)
+        const totalBooks =
+            params.node.childrenAfterGroup
+                ?.map(n => n.allLeafChildren || [])
+                ?.flat().length || 0;
+
+        return `
+            <div style="display:flex; align-items:center; justify-content:space-between; width:100%;">
+                <span>${label}</span>
+                <span style="margin-left:12px;">[ ${totalBooks} ]</span>
+            </div>
+        `;
+    }
+
+    return params.value || '';
+}
+
+
+//
+// Column definitions - TREE MODE + auto group column handles checkboxes & drag
 //
 const columnDefs = [
 
-    /* Checkbox */
-    {
-        headerName: "",
-        checkboxSelection: true,
-        headerCheckboxSelection: true,
-        width: 50,
-        pinned: "left",
-        resizable: false,
-        // pinned footer cell for checkbox -> show empty box
-        cellRenderer: function(params) {
-            // normal cell content
-            if (params.node && params.node.rowPinned === 'bottom') {
-                return `<div class="footer-box"></div>`;
-            }
-            return params.value;
-        }
-    },
-
-    /* Row Drag */
-    {
-        headerName: "",
-        rowDrag: true,
-        width: 50,
-        pinned: "left",
-        resizable: false,
-        cellRenderer: function(params) {
-            if (params.node && params.node.rowPinned === 'bottom') {
-                return `<div class="footer-box"></div>`;
-            }
-            return params.value;
-        }
-    },
-
-    /* Fields */
-    { headerName: "S.No", valueGetter: "node.rowIndex + 1", width: 90,
-        cellRenderer: function(params){
-            if (params.node && params.node.rowPinned === 'bottom') {
-                return `<div class="footer-box"></div>`;
-            }
-            return params.value;
-        }
-    },
-
+    /* Title field still present so group label shows when leaf */
     { field: "title", sortable: true, filter: 'agTextColumnFilter', floatingFilter: true,
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            // For group nodes, ag-grid will render group label via autoGroupColumnDef
+            return params.value || '';
         }
     },
 
+    /* Author (will be empty on group nodes) */
     { field: "author", sortable: true, filter: 'agTextColumnFilter', floatingFilter: true,
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            return params.value || '';
         }
     },
 
@@ -217,28 +259,28 @@ const columnDefs = [
         filterParams: { suppressMiniFilter: false },
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            return params.value || '';
         }
     },
 
     { field: "isbn", sortable: true, filter: 'agNumberColumnFilter', floatingFilter: true,
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            return params.data && params.data.isbn ? params.data.isbn : '';
         }
     },
 
     { field: "publisher", sortable: true, filter: 'agTextColumnFilter', floatingFilter: true,
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            return params.value || '';
         }
     },
 
     { field: "publication_year", headerName: "Year", sortable: true, filter: 'agNumberColumnFilter', floatingFilter: true,
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            return params.value || '';
         }
     },
 
@@ -250,9 +292,7 @@ const columnDefs = [
         filter: 'agNumberColumnFilter',
         floatingFilter: true,
         cellRenderer: function(params) {
-            // if this is the pinned bottom row - render select + result area
             if (params.node && params.node.rowPinned === 'bottom') {
-                // unique ids: footer-total-select and footer-total-value
                 return `
                     <div style="display:flex; align-items:center; gap:8px;">
                         <select id="footer-total-select" class="footer-select">
@@ -268,7 +308,9 @@ const columnDefs = [
                     </div>
                 `;
             }
-            return params.value;
+            // show only for leaf rows (books)
+            if (params.node && params.node.group) return '';
+            return params.value !== undefined && params.value !== null ? params.value : '';
         }
     },
 
@@ -296,26 +338,34 @@ const columnDefs = [
                     </div>
                 `;
             }
-            return params.value;
+            if (params.node && params.node.group) return '';
+            return params.value !== undefined && params.value !== null ? params.value : '';
         }
     },
 
     { field: "issued_by", headerName: "Issued By", sortable: true, filter: 'agTextColumnFilter', floatingFilter: true,
         cellRenderer: function(params){
             if (params.node && params.node.rowPinned === 'bottom') return `<div class="footer-box"></div>`;
-            return params.value;
+            if (params.node && params.node.group) return '';
+            return params.value || '';
         }
     },
 
-    /* Action Buttons */
+    /* Action Buttons - show ONLY for leaf (book) nodes */
     {
         headerName: "Action",
         pinned: "right",
         width: 150,
-        cellRenderer: params => {
+        cellRenderer: function(params) {
+            // pinned footer placeholder
             if (params.node && params.node.rowPinned === 'bottom') {
                 return `<div class="footer-box"></div>`;
             }
+            // if this is a group node -> no actions
+            if (params.node && params.node.group) {
+                return '';
+            }
+            // leaf node => show action buttons
             let id = params.data.isbn;
             let viewUrl = "{{ route('books.show', ':id') }}".replace(":id", id);
             let editUrl = "{{ route('books.edit', ':id') }}".replace(":id", id);
@@ -330,11 +380,21 @@ const columnDefs = [
 
 const rowData = @json($books);
 
+/**
+ * Grid options:
+ * - treeData: true with getDataPath -> uses "hierarchy" array from controller
+ * - autoGroupColumnDef handles the left-most column: expand/collapse, checkbox, rowDrag
+ */
 const gridOptions = {
     columnDefs,
     rowData,
+    treeData: true,
+    getDataPath: function(data) {
+        // controller must supply `hierarchy` array (root-first)
+        return data.hierarchy || [data.title || ''];
+    },
     animateRows: true,
-    rowDragManaged: true,
+    // We keep rowSelection multiple and let AG show checkboxes in auto-group column
     rowSelection: 'multiple',
     pagination: true,
     paginationPageSize: 10,
@@ -351,15 +411,50 @@ const gridOptions = {
         floatingFilter: true
     },
 
-    // initialize a pinned bottom row (one row)
+    // Auto group column — left-most expandable column
+    autoGroupColumnDef: {
+        headerName: "Books",
+        minWidth: 320,
+        cellRenderer: 'agGroupCellRenderer',
+        cellRendererParams: {
+            suppressCount: true,
+            innerRenderer: groupInnerRenderer
+        },
+        // Enable checkbox & header checkbox in the auto group column
+        headerCheckboxSelection: true,
+        headerCheckboxSelectionFilteredOnly: true,
+        checkboxSelection: function(params) {
+            // show checkbox for all nodes (groups and leaves)
+            return true;
+        },
+        // show row-drag handle for all nodes (group + leaf)
+        rowDrag: true
+    },
+
+    // initialize a pinned bottom row (one row) for footer controls (totals)
     pinnedBottomRowData: [
-        // We create an object with keys matching column fields; values are ignored because renderers will handle the pinned row
         {
             title: '', author: '', genre: '', isbn: '', publisher: '',
             publication_year: '', total_copies: '', available_copies: '', issued_by: ''
         }
     ]
 };
+/* ⭐⭐ ADD THIS BLOCK RIGHT HERE ⭐⭐ */
+gridOptions.onRowGroupOpened = function () {
+    setTimeout(() => {
+        // attachFooterListeners();
+        recomputeFooterValuesKeepSelection();
+    }, 50);
+};
+
+gridOptions.onRowDataUpdated = function () {
+    setTimeout(() => {
+        recomputeFooterValuesKeepSelection();
+    }, 50);
+};
+
+
+/* ⭐⭐ END ⭐⭐ */
 
 new agGrid.Grid(document.getElementById('myGrid'), gridOptions);
 
@@ -376,23 +471,26 @@ function getPageRowRange() {
     return { start, end };
 }
 
-function collectNumericValuesOnPage(field) {
-    // gather values from displayed rows on the current page only
-    const api = gridOptions.api;
-    const { start, end } = getPageRowRange();
+function collectValuesForVisibleLeaves(field) {
     const values = [];
-    for (let i = start; i <= end; i++) {
-        const node = api.getDisplayedRowAtIndex(i);
-        if (!node || !node.data) continue;
+
+    gridOptions.api.forEachLeafNode((node) => {
+        // not displayed? skip
+        if (!node.displayed) return;
+
+        // not a real book row? skip
+        if (!node.data) return;
+
         let v = node.data[field];
-        // ignore null/undefined/empty strings for numeric ops (but COUNT counts non-null)
-        if (v === null || v === undefined || v === '') continue;
-        // convert numeric-like strings to numbers (if not numeric, skip)
-        const num = parseFloat(String(v).toString().replace(/,/g, ''));
+        if (v === null || v === undefined || v === '') return;
+
+        const num = parseFloat(v);
         if (!isNaN(num)) values.push(num);
-    }
+    });
+
     return values;
 }
+
 
 function computeAggregate(values, op) {
     if (!values || values.length === 0) {
@@ -428,7 +526,7 @@ function formatNumberSmart(n) {
 
 // triggered when user changes dropdown for total/available
 function onFooterSelectChanged(colField, op) {
-    const values = collectNumericValuesOnPage(colField);
+    const values = collectValuesForVisibleLeaves(colField);
     const result = computeAggregate(values, op);
     const elId = (colField === 'total_copies') ? 'footer-total-value' : 'footer-available-value';
     const el = document.getElementById(elId);
@@ -486,7 +584,7 @@ function updatePagination() {
 
 document.getElementById("firstPage").onclick = () => { gridOptions.api.paginationGoToFirstPage(); updatePagination(); recomputeFooterValuesKeepSelection(); };
 document.getElementById("prevPage").onclick  = () => { gridOptions.api.paginationGoToPreviousPage(); updatePagination(); recomputeFooterValuesKeepSelection(); };
-document.getElementById("nextPage").onclick  = () => { gridOptions.api.paginationGoToNextPage(); updatePagination(); recomputeFooterValuesKeepSelection(); };
+document.getElementById("nextPage").onclick  = () => { gridOptions.api.paginationGetNextPage ? gridOptions.api.paginationGetNextPage() : gridOptions.api.paginationGoToNextPage(); updatePagination(); recomputeFooterValuesKeepSelection(); };
 document.getElementById("lastPage").onclick  = () => { gridOptions.api.paginationGoToLastPage(); updatePagination(); recomputeFooterValuesKeepSelection(); };
 
 // re-attach listeners after pinned bottom row renders
