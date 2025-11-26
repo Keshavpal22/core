@@ -92,6 +92,7 @@ Route::group(['middleware' => 'auth'], function () {
 
     Route::group([], __DIR__ . '/web/keshav_routes.php');
     Route::group([], __DIR__ . '/web/library_routes.php');
+    Route::group([], __DIR__ . '/web/employee_routes.php');
 });
 
 
