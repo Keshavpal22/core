@@ -1,136 +1,186 @@
 {{-- resources/views/employee/index.blade.php --}}
 @extends('layouts.main')
-@section('title', 'Employee Performance')
+@section('title', 'Employee Performance Dashboard (Premium)')
 
 @push('head')
+<!-- AG Grid CSS – बिना पुरानी थीम के (नई थीम API यूज़ करेंगे) -->
 <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css" />
 <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
 <style>
-    #myGrid {
-        height: 650px;
-        width: 100%;
+    body {
+        background: #f5f7fa;
     }
 
-    .ag-paging-panel {
-        display: none !important;
+    .page-container {
+        padding: 20px 0;
     }
 
-    .grid-toolbar {
+    .dashboard-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 18px 25px;
+        border: none;
+    }
+
+    .toolbar {
+        background: white;
+        padding: 14px 20px;
+        border-bottom: 1px solid #e0e0e0;
+        margin-bottom: 12px;
         display: flex;
         justify-content: space-between;
+        align-items: center;
         flex-wrap: wrap;
-        gap: 10px;
-        margin-bottom: 15px;
+        gap: 12px;
     }
 
-    .custom-pagination {
+    .toolbar-left,
+    .toolbar-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .quick-search {
+        width: 320px;
+    }
+
+    .grid-wrapper {
+        height: calc(100vh - 280px);
+        min-height: 600px;
+    }
+
+    #myGrid {
+        height: 100% !important;
+        width: 100% !important;
+    }
+
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 8px;
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        padding: 10px;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        margin-bottom: 15px;
+        justify-content: center;
+        font-size: 14px;
+        transition: all 0.2s;
     }
 
-    .page-info {
-        font-weight: 600;
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
     .stats-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 15px;
-        border-radius: 8px;
+        border-radius: 12px;
+        padding: 20px;
         text-align: center;
-        margin-bottom: 20px;
+        transition: transform 0.2s;
     }
 
-    .pivot-toggle {
-        margin-bottom: 10px;
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    /* Perfect blue tick in popup filters */
+    .ag-popup .ag-checkbox-input-wrapper {
+        background: white !important;
+        border: 2px solid #c0c0c0 !important;
+        border-radius: 4px !important;
+        width: 18px !important;
+        height: 18px !important;
+        position: relative !important;
+    }
+
+    .ag-popup .ag-checkbox-input-wrapper::after {
+        content: "✓" !important;
+        color: #007bff !important;
+        font-size: 16px !important;
+        font-weight: bold !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        opacity: 0 !important;
+    }
+
+    .ag-popup .ag-checkbox-input-wrapper:checked {
+        border-color: #007bff !important;
+        background: #007bff !important;
+    }
+
+    .ag-popup .ag-checkbox-input-wrapper:checked::after {
+        opacity: 1 !important;
+        color: white !important;
     }
 </style>
 @endpush
 
 @section('content')
-<div class="container-fluid">
-    @include('include.message')
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Employee Performance Dashboard</h3>
-            <a href="{{ route('employees.create') }}" class="btn btn-primary">Add Employee</a>
+<div class="container-fluid page-container">
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ $totalEmployees }}</h3>
+                <p>Total Employees</p>
+            </div>
         </div>
-        <div class="card-body">
-            <!-- Quick Stats -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <h4>{{ $totalEmployees }}</h4>
-                        <p>Total Employees</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <h4>{{ number_format($avgEfficiency, 1) }}%</h4>
-                        <p>Avg Efficiency</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <h4>{{ number_format($avgAttendance, 1) }}%</h4>
-                        <p>Avg Attendance</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stats-card">
-                        <h4>{{ $topPerformers }}</h4>
-                        <p>5-Star Performers</p>
-                    </div>
-                </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ number_format($avgEfficiency, 1) }}%</h3>
+                <p>Avg Efficiency</p>
             </div>
-
-            <!-- Pivot Toggle (Community-style grouping as pivot alternative) -->
-            <div class="pivot-toggle">
-                <button id="togglePivot" class="btn btn-outline-primary btn-sm">Toggle Pivot View (Group by
-                    Department)</button>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ number_format($avgAttendance, 1) }}%</h3>
+                <p>Avg Attendance</p>
             </div>
-
-            <!-- Toolbar -->
-            <div class="grid-toolbar">
-                <div>
-                    <input type="text" id="searchBox" class="form-control" style="width:300px;"
-                        placeholder="Quick Search...">
-                </div>
-                <div>
-                    <button id="exportCsv" class="btn btn-success btn-sm">Export CSV</button>
-                    <button id="printBtn" class="btn btn-dark btn-sm">Print</button>
-                </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <h3>{{ $topPerformers }}</h3>
+                <p>Top Performers</p>
             </div>
+        </div>
+    </div>
 
-            <!-- Custom Pagination (Top) -->
-            <div class="custom-pagination">
-                <div class="page-info">
-                    <span id="rangeText">1 - 20 of {{ $totalEmployees }}</span>
-                </div>
-                <div>
-                    <button id="firstPage" class="btn btn-light btn-sm">First</button>
-                    <button id="prevPage" class="btn btn-light btn-sm">Previous</button>
-                    <span id="pageText" class="mx-2 fw-bold">Page 1 of {{ ceil($totalEmployees/20) }}</span>
-                    <button id="nextPage" class="btn btn-light btn-sm">Next</button>
-                    <button id="lastPage" class="btn btn-light btn-sm">Last</button>
-                </div>
-                <div>
-                    <select id="pageSizeSelect" class="form-select form-select-sm">
-                        <option value="10">10</option>
-                        <option value="20" selected>20</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
+    <div class="card dashboard-card">
+        <div class="card-header">
+            <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i> Employee Performance Dashboard (Premium)</h4>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input type="text" id="quickFilter" class="form-control quick-search" placeholder="Quick Search...">
+                <button id="toggleFilters" class="btn btn-outline-secondary btn-sm"><i class="fas fa-filter"></i>
+                    Filters</button>
+                <button id="resetAll" class="btn btn-outline-danger btn-sm"><i class="fas fa-undo"></i> Reset</button>
+                <button id="togglePivot" class="btn btn-outline-primary btn-sm"><i class="fas fa-table"></i> Pivot
+                    Mode</button>
             </div>
+            <div class="toolbar-right">
+                <button id="exportCsv" class="btn btn-success btn-sm"><i class="fas fa-file-csv"></i> CSV</button>
+                <button id="exportExcel" class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Excel</button>
+                <button onclick="window.print()" class="btn btn-secondary btn-sm"><i class="fas fa-print"></i></button>
+                <a href="{{ route('employees.create') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Add
+                    Employee</a>
+            </div>
+        </div>
 
-            <!-- AG Grid -->
+        <div class="grid-wrapper">
             <div id="myGrid" class="ag-theme-alpine"></div>
         </div>
     </div>
@@ -138,130 +188,82 @@
 @endsection
 
 @push('script')
-<script src="https://unpkg.com/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise/dist/ag-grid-enterprise.min.js"></script>
 <script>
+    // अगर आपके पास वैलिड लाइसेंस है तो यहाँ डालें, नहीं तो 2 महीने तक फ्री चलेगा
+    // agGrid.LicenseManager.setLicenseKey("your_key_here");
+
     const rowData = @json($employees);
 
-    let isPivotView = false;
-    let columnDefs = [
-        { field: 'emp_id', headerName: 'ID', width: 90 },
-        { field: 'name', headerName: 'Name', width: 200 },
-        { field: 'department', headerName: 'Department', width: 130 },
-        { field: 'country', headerName: 'Country', width: 100 },
-        { field: 'tasks', headerName: 'Tasks', width: 100 },
-        { field: 'hours', headerName: 'Hours', width: 100 },
-        { field: 'leaves', headerName: 'Leaves', width: 100 },
-        { field: 'efficiency', headerName: 'Efficiency %', width: 130, valueFormatter: p => p.value ? p.value.toFixed(1)+'%' : '' },
-        { field: 'attendance', headerName: 'Attendance %', width: 140, valueFormatter: p => p.value ? p.value.toFixed(1)+'%' : '' },
-        { field: 'rating', headerName: 'Rating', width: 100 },
-        {
-            headerName: 'Action',
-            width: 180,
-            cellRenderer: params => {
-                const id = params.data.emp_id;
-                const show = "{{ route('employees.show', ':id') }}".replace(':id', id);
-                const edit = "{{ route('employees.edit', ':id') }}".replace(':id', id);
-                return `<a href="${show}" class="btn btn-info btn-sm">View</a> <a href="${edit}" class="btn btn-success btn-sm">Edit</a>`;
-            }
-        }
-    ];
-
-    // Pivot-like column defs (basic grouping on department)
-    const pivotColumnDefs = [
-        { field: 'department', rowGroup: true, hide: true },  // Basic grouping (Community-supported)
-        { field: 'emp_id', headerName: 'ID', width: 90 },
-        { field: 'name', headerName: 'Name', width: 200 },
-        { field: 'country', headerName: 'Country', width: 100 },
-        { field: 'tasks', headerName: 'Tasks', width: 100 },
-        { field: 'hours', headerName: 'Hours', width: 100 },
-        { field: 'leaves', headerName: 'Leaves', width: 100 },
-        { field: 'efficiency', headerName: 'Efficiency %', width: 130, valueFormatter: p => p.value ? p.value.toFixed(1)+'%' : '' },
-        { field: 'attendance', headerName: 'Attendance %', width: 140, valueFormatter: p => p.value ? p.value.toFixed(1)+'%' : '' },
-        { field: 'rating', headerName: 'Rating', width: 100 },
-        {
-            headerName: 'Action',
-            width: 180,
-            cellRenderer: params => {
-                if (!params.data) return 'TOTAL';  // Footer for grouped rows
-                const id = params.data.emp_id;
-                const show = "{{ route('employees.show', ':id') }}".replace(':id', id);
-                const edit = "{{ route('employees.edit', ':id') }}".replace(':id', id);
-                return `<a href="${show}" class="btn btn-info btn-sm">View</a> <a href="${edit}" class="btn btn-success btn-sm">Edit</a>`;
-            }
-        }
+    const columnDefs = [
+        { field: "emp_id", headerName: "ID", width: 80 },
+        { field: "name", headerName: "Name", width: 180 },
+        { field: "department", headerName: "Department", enableRowGroup: true, enablePivot: true },
+        { field: "country", headerName: "Country", enableRowGroup: true, enablePivot: true },
+        { field: "tasks", headerName: "Tasks", aggFunc: "sum", enableValue: true },
+        { field: "hours", headerName: "Hours", aggFunc: "sum", enableValue: true },
+        { field: "leaves", headerName: "Leaves", aggFunc: "sum", enableValue: true },
+        { field: "efficiency", headerName: "Efficiency %", aggFunc: "avg", enableValue: true,
+          valueFormatter: p => p.value ? p.value.toFixed(1) + '%' : '' },
+        { field: "attendance", headerName: "Attendance %", aggFunc: "avg", enableValue: true,
+          valueFormatter: p => p.value ? p.value.toFixed(1) + '%' : '' },
+        { field: "rating", headerName: "Rating", aggFunc: "avg", enableValue: true },
+        { headerName: "Action", width: 110, pinned: 'right', sortable: false, filter: false,
+          cellRenderer: p => p.data ? `<div style="display:flex;gap:6px;justify-content:center;height:100%;align-items:center;">
+              <a href="{{ route('employees.show', ':id') }}".replace(':id', p.data.emp_id) class="btn btn-info action-btn" title="View"><i class="fas fa-eye"></i></a>
+              <a href="{{ route('employees.edit', ':id') }}".replace(':id', p.data.emp_id) class="btn btn-success action-btn" title="Edit"><i class="fas fa-edit"></i></a>
+          </div>` : '' }
     ];
 
     const gridOptions = {
         columnDefs,
         rowData,
-        animateRows: true,
         pagination: true,
         paginationPageSize: 20,
-        paginationPageSizeSelector: [10, 20, 50, 100],
-        defaultColDef: {
-            resizable: true,
-            sortable: true,
-            filter: true,
-            floatingFilter: true
-        },
-        groupDefaultExpanded: 1,  // For pivot-like view
-        autoGroupColumnDef: {
-            headerName: 'Department Group',
-            minWidth: 320
-        }
+        pivotMode: false,                    // शुरू में बंद
+        pivotPanelShow: 'always',
+        rowGroupPanelShow: 'always',
+        popupParent: document.body,
+        theme: 'ag-theme-alpine',            // नई थीम API – एरर #239 गायब
+        rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
+        cellSelection: true,
+        sideBar: { toolPanels: ['columns', 'filters'], defaultToolPanel: 'columns' },
+        defaultColDef: { sortable: true, filter: true, resizable: true, floatingFilter: true, flex: 1, minWidth: 110 },
+        autoGroupColumnDef: { headerName: "Group", minWidth: 280, cellRendererParams: { suppressCount: true } },
+        suppressAggFuncInHeader: true,
+        animateRows: true,
+        domLayout: 'normal'
     };
 
-    agGrid.createGrid(document.querySelector('#myGrid'), gridOptions);
+    const gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 
-    // Toggle Pivot View
-    document.getElementById('togglePivot').onclick = () => {
-        isPivotView = !isPivotView;
-        gridOptions.columnDefs = isPivotView ? pivotColumnDefs : columnDefs;
-        gridOptions.api.setColumnDefs(gridOptions.columnDefs);
-        document.getElementById('togglePivot').textContent = isPivotView ? 'Toggle Flat View' : 'Toggle Pivot View (Group by Department)';
+    // Toolbar Actions
+    document.getElementById('quickFilter').addEventListener('input', e => gridApi.setQuickFilter(e.target.value));
+    document.getElementById('toggleFilters').onclick = () => gridApi.setSideBarVisible(!gridApi.isSideBarVisible());
+
+    // Perfect Reset
+    document.getElementById('resetAll').onclick = () => {
+        gridApi.setPivotMode(false);
+        gridApi.setRowGroupColumns([]);
+        gridApi.setPivotColumns([]);
+        gridApi.setValueColumns([]);
+        gridApi.setFilterModel(null);
+        gridApi.setQuickFilter('');
+        document.getElementById('quickFilter').value = '';
+        gridApi.setColumnDefs(columnDefs);
     };
 
-    // Update pagination info
-    function updatePaginationInfo() {
-        const currentPage = gridOptions.api.paginationGetCurrentPage() + 1;
-        const pageSize = gridOptions.api.paginationGetPageSize();
-        const totalRows = gridOptions.api.getDisplayedRowCount();
-        const totalPages = gridOptions.api.paginationGetTotalPages();
-        const start = (currentPage - 1) * pageSize + 1;
-        const end = Math.min(currentPage * pageSize, totalRows);
-
-        document.getElementById('rangeText').textContent = `${start} - ${end} of ${totalRows}`;
-        document.getElementById('pageText').textContent = `Page ${currentPage} of ${totalPages}`;
-    }
-
-    gridOptions.onGridReady = updatePaginationInfo;
-    gridOptions.onPaginationChanged = updatePaginationInfo;
-
-    // Search
-    document.getElementById('searchBox').addEventListener('input', e => {
-        gridOptions.api.setQuickFilter(e.target.value);
+    // Pivot Toggle Button
+    document.getElementById('togglePivot')?.addEventListener('click', () => {
+        const isOn = gridApi.isPivotMode();
+        gridApi.setPivotMode(!isOn);
+        const btn = document.getElementById('togglePivot');
+        btn.innerHTML = !isOn ? '<i class="fas fa-times"></i> Exit Pivot' : '<i class="fas fa-table"></i> Pivot Mode';
+        btn.classList.toggle('btn-outline-primary');
+        btn.classList.toggle('btn-danger');
     });
 
-    // Page Size
-    document.getElementById('pageSizeSelect').addEventListener('change', e => {
-        gridOptions.api.paginationSetPageSize(Number(e.target.value));
-    });
-
-    // Pagination Buttons
-    document.getElementById('firstPage').onclick = () => gridOptions.api.paginationGoToFirstPage();
-    document.getElementById('prevPage').onclick = () => gridOptions.api.paginationGoToPreviousPage();
-    document.getElementById('nextPage').onclick = () => gridOptions.api.paginationGoToNextPage();
-    document.getElementById('lastPage').onclick = () => gridOptions.api.paginationGoToLastPage();
-
-    // CSV Export (Working!)
-    document.getElementById('exportCsv').onclick = () => {
-        gridOptions.api.exportDataAsCsv({
-            fileName: 'employee_performance_' + new Date().toISOString().slice(0,10) + '.csv',
-            columnSeparator: ','
-        });
-    };
-
-    // Print
-    document.getElementById('printBtn').onclick = () => window.print();
+    document.getElementById('exportCsv').onclick = () => gridApi.exportDataAsCsv({ fileName: 'employees.csv' });
+    document.getElementById('exportExcel').onclick = () => gridApi.exportDataAsExcel({ fileName: 'employees.xlsx' });
 </script>
 @endpush
