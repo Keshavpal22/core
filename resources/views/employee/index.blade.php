@@ -3,7 +3,6 @@
 @section('title', 'Employee Performance Dashboard (Premium)')
 
 @push('head')
-<!-- AG Grid CSS – बिना पुरानी थीम के (नई थीम API यूज़ करेंगे) -->
 <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-grid.css" />
 <link rel="stylesheet" href="https://unpkg.com/ag-grid-community/styles/ag-theme-alpine.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
@@ -94,36 +93,37 @@
         transform: translateY(-5px);
     }
 
-    /* Perfect blue tick in popup filters */
-    .ag-popup .ag-checkbox-input-wrapper {
-        background: white !important;
-        border: 2px solid #c0c0c0 !important;
-        border-radius: 4px !important;
-        width: 18px !important;
-        height: 18px !important;
-        position: relative !important;
+    /* Beautiful Blue Tick (Your Favorite Style) */
+    .ag-set-filter-item .ag-checkbox-input-wrapper.ag-checked {
+        background: #4dabf7 !important;
+        border-color: #339af0 !important;
+        box-shadow: 0 4px 12px rgba(77, 171, 247, 0.4) !important;
     }
 
-    .ag-popup .ag-checkbox-input-wrapper::after {
-        content: "✓" !important;
-        color: #007bff !important;
-        font-size: 16px !important;
-        font-weight: bold !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        opacity: 0 !important;
-    }
-
-    .ag-popup .ag-checkbox-input-wrapper:checked {
-        border-color: #007bff !important;
-        background: #007bff !important;
-    }
-
-    .ag-popup .ag-checkbox-input-wrapper:checked::after {
-        opacity: 1 !important;
+    .ag-set-filter-item .ag-checkbox-input-wrapper.ag-checked::after {
+        content: "Check" !important;
         color: white !important;
+        font-weight: 900 !important;
+        font-size: 15px !important;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+    }
+
+    .ag-set-filter-item .ag-checkbox-input-wrapper {
+        background: white !important;
+        border: 2px solid #ddd !important;
+        border-radius: 8px !important;
+        width: 20px !important;
+        height: 20px !important;
+        position: relative !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .ag-set-filter-item:hover .ag-checkbox-input-wrapper {
+        border-color: #4dabf7 !important;
     }
 </style>
 @endpush
@@ -161,7 +161,6 @@
         <div class="card-header">
             <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i> Employee Performance Dashboard (Premium)</h4>
         </div>
-
         <div class="toolbar">
             <div class="toolbar-left">
                 <input type="text" id="quickFilter" class="form-control quick-search" placeholder="Quick Search...">
@@ -179,7 +178,6 @@
                     Employee</a>
             </div>
         </div>
-
         <div class="grid-wrapper">
             <div id="myGrid" class="ag-theme-alpine"></div>
         </div>
@@ -190,80 +188,81 @@
 @push('script')
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise/dist/ag-grid-enterprise.min.js"></script>
 <script>
-    // अगर आपके पास वैलिड लाइसेंस है तो यहाँ डालें, नहीं तो 2 महीने तक फ्री चलेगा
-    // agGrid.LicenseManager.setLicenseKey("your_key_here");
+    function ActionRenderer(params) {
+        if (!params.data) return '';
+        const id = params.data.emp_id;
+        const showUrl = "{{ route('employees.show', ':id') }}".replace(':id', id);
+        const editUrl = "{{ route('employees.edit', ':id') }}".replace(':id', id);
+        return `<div style="display:flex;gap:6px;justify-content:center;height:100%;align-items:center;">
+                    <a href="${showUrl}" class="btn btn-info btn-sm"><i class="fas fa-eye"></i></a>
+                    <a href="${editUrl}" class="btn btn-success btn-sm"><i class="fas fa-edit"></i></a>
+                </div>`;
+    }
 
-    const rowData = @json($employees);
-
-    const columnDefs = [
-        { field: "emp_id", headerName: "ID", width: 80 },
-        { field: "name", headerName: "Name", width: 180 },
-        { field: "department", headerName: "Department", enableRowGroup: true, enablePivot: true },
-        { field: "country", headerName: "Country", enableRowGroup: true, enablePivot: true },
-        { field: "tasks", headerName: "Tasks", aggFunc: "sum", enableValue: true },
-        { field: "hours", headerName: "Hours", aggFunc: "sum", enableValue: true },
-        { field: "leaves", headerName: "Leaves", aggFunc: "sum", enableValue: true },
-        { field: "efficiency", headerName: "Efficiency %", aggFunc: "avg", enableValue: true,
-          valueFormatter: p => p.value ? p.value.toFixed(1) + '%' : '' },
-        { field: "attendance", headerName: "Attendance %", aggFunc: "avg", enableValue: true,
-          valueFormatter: p => p.value ? p.value.toFixed(1) + '%' : '' },
-        { field: "rating", headerName: "Rating", aggFunc: "avg", enableValue: true },
-        { headerName: "Action", width: 110, pinned: 'right', sortable: false, filter: false,
-          cellRenderer: p => p.data ? `<div style="display:flex;gap:6px;justify-content:center;height:100%;align-items:center;">
-              <a href="{{ route('employees.show', ':id') }}".replace(':id', p.data.emp_id) class="btn btn-info action-btn" title="View"><i class="fas fa-eye"></i></a>
-              <a href="{{ route('employees.edit', ':id') }}".replace(':id', p.data.emp_id) class="btn btn-success action-btn" title="Edit"><i class="fas fa-edit"></i></a>
-          </div>` : '' }
-    ];
+    const config = @json($gridConfig);
+    let gridApi = null;
 
     const gridOptions = {
-        columnDefs,
-        rowData,
-        pagination: true,
-        paginationPageSize: 20,
-        pivotMode: false,                    // शुरू में बंद
-        pivotPanelShow: 'always',
-        rowGroupPanelShow: 'always',
-        popupParent: document.body,
-        theme: 'ag-theme-alpine',            // नई थीम API – एरर #239 गायब
-        rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
-        cellSelection: true,
-        sideBar: { toolPanels: ['columns', 'filters'], defaultToolPanel: 'columns' },
+        components: { ActionRenderer },
+        columnDefs: config.columns,
+        rowData: config.data,
+        theme: 'legacy',
         defaultColDef: { sortable: true, filter: true, resizable: true, floatingFilter: true, flex: 1, minWidth: 110 },
-        autoGroupColumnDef: { headerName: "Group", minWidth: 280, cellRendererParams: { suppressCount: true } },
-        suppressAggFuncInHeader: true,
-        animateRows: true,
-        domLayout: 'normal'
+        pagination: true, paginationPageSize: 20,
+        pivotMode: false, pivotPanelShow: 'always', rowGroupPanelShow: 'always',
+        rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
+        sideBar: { toolPanels: ['columns', 'filters'], defaultToolPanel: 'columns' },
+        animateRows: true, domLayout: 'normal',
+
+        onGridReady: function(params) {
+            gridApi = params.api;
+
+            // YEH SABSE BEST TARIKA HAI — grid ready hone ke baad search attach karo
+            const searchBox = document.getElementById('quickFilter');
+            if (searchBox) {
+                // Purane listeners hatao
+                searchBox.removeEventListener('input', handleQuickSearch);
+
+                // Naya clean handler
+                function handleQuickSearch(e) {
+                    gridApi.setQuickFilter(e.target.value);
+                }
+
+                // Attach kar do
+                searchBox.addEventListener('input', handleQuickSearch);
+            }
+
+            console.log("Grid ready — Quick Search 100% ACTIVE!");
+        }
     };
 
-    const gridApi = agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
+    agGrid.createGrid(document.getElementById('myGrid'), gridOptions);
 
-    // Toolbar Actions
-    document.getElementById('quickFilter').addEventListener('input', e => gridApi.setQuickFilter(e.target.value));
-    document.getElementById('toggleFilters').onclick = () => gridApi.setSideBarVisible(!gridApi.isSideBarVisible());
-
-    // Perfect Reset
-    document.getElementById('resetAll').onclick = () => {
-        gridApi.setPivotMode(false);
-        gridApi.setRowGroupColumns([]);
-        gridApi.setPivotColumns([]);
-        gridApi.setValueColumns([]);
+    // Reset Button
+    document.getElementById('resetAll')?.addEventListener('click', function() {
+        if (!gridApi) return;
         gridApi.setFilterModel(null);
         gridApi.setQuickFilter('');
         document.getElementById('quickFilter').value = '';
-        gridApi.setColumnDefs(columnDefs);
-    };
-
-    // Pivot Toggle Button
-    document.getElementById('togglePivot')?.addEventListener('click', () => {
-        const isOn = gridApi.isPivotMode();
-        gridApi.setPivotMode(!isOn);
-        const btn = document.getElementById('togglePivot');
-        btn.innerHTML = !isOn ? '<i class="fas fa-times"></i> Exit Pivot' : '<i class="fas fa-table"></i> Pivot Mode';
-        btn.classList.toggle('btn-outline-primary');
-        btn.classList.toggle('btn-danger');
+        gridApi.setPivotMode(false);
+        gridApi.setRowGroupColumns([]);
+        gridApi.setColumnDefs(config.columns);
     });
 
-    document.getElementById('exportCsv').onclick = () => gridApi.exportDataAsCsv({ fileName: 'employees.csv' });
-    document.getElementById('exportExcel').onclick = () => gridApi.exportDataAsExcel({ fileName: 'employees.xlsx' });
+    // Export Buttons
+    document.getElementById('exportCsv')?.addEventListener('click', () => gridApi?.exportDataAsCsv({fileName: 'employees.csv'}));
+    document.getElementById('exportExcel')?.addEventListener('click', () => gridApi?.exportDataAsExcel({fileName: 'employees.xlsx'}));
+
+    // Filters & Pivot
+    document.getElementById('toggleFilters')?.addEventListener('click', () => gridApi?.setSideBarVisible(!gridApi?.isSideBarVisible()));
+    document.getElementById('togglePivot')?.addEventListener('click', function() {
+        if (gridApi) {
+            const isOn = gridApi.isPivotMode();
+            gridApi.setPivotMode(!isOn);
+            this.innerHTML = !isOn ? 'Exit Pivot' : 'Pivot Mode';
+            this.classList.toggle('btn-outline-primary', isOn);
+            this.classList.toggle('btn-danger', !isOn);
+        }
+    });
 </script>
 @endpush

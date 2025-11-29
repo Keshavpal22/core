@@ -19,6 +19,7 @@ class Employee extends Model
         'name',
         'department',
         'country',
+        'mobile',
         'tasks',
         'hours',
         'leaves',

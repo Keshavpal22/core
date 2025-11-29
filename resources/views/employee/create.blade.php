@@ -7,19 +7,21 @@
 <div class="container-fluid">
 
     <div class="card">
-        <div class="card-header"><h3>Add Employee</h3></div>
+        <div class="card-header">
+            <h3>Add Employee</h3>
+        </div>
 
         <div class="card-body">
 
             @if ($errors->any())
-                <div class="alert alert-danger">
-                    <strong>Please fix the errors:</strong>
-                    <ul>
-                        @foreach ($errors->all() as $err)
-                            <li>{{ $err }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="alert alert-danger">
+                <strong>Please fix the errors:</strong>
+                <ul>
+                    @foreach ($errors->all() as $err)
+                    <li>{{ $err }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
 
             <form method="POST" action="{{ route('employees.store') }}">
@@ -45,6 +47,16 @@
                     <div class="col-md-4 form-group">
                         <label>Country (2-letter code)</label>
                         <input type="text" name="country" class="form-control" maxlength="2" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="mobile" class="form-label">Mobile Number</label>
+                        <input type="text" name="mobile" id="mobile"
+                            class="form-control @error('mobile') is-invalid @enderror" value="{{ old('mobile') }}"
+                            placeholder="9876543210" maxlength="15">
+                        @error('mobile')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="col-md-4 form-group">
