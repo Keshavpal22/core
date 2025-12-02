@@ -103,7 +103,7 @@ return [
 
 
 {{-- ===================================================================================== --}}
-{{-- CSS (UNCHANGED) --}}
+{{-- CSS (UNCHANGED except drag ghost sizing) --}}
 {{-- ===================================================================================== --}}
 @push('after_styles')
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
@@ -209,10 +209,9 @@ return [
         padding-right: 14px !important;
     }
 
-    /* ⭐⭐⭐ YOUR FINAL REQUESTED DRAG FIX ⭐⭐⭐ */
-    /* Exact AG-Grid Official Demo Drag Box Size (Performance wala) */
-    /* OFFICIAL AG-GRID DEMO Jaisa Perfect Small Drag Box */
-    .ag-dnd-ghost {
+    /* ⭐⭐⭐ Drag ghost small (official demo like) ⭐⭐⭐ */
+    .ag-dnd-ghost,
+    .ag-dragged-header {
         background: white !important;
         border: 1px solid #babfc7 !important;
         border-radius: 4px !important;
@@ -229,24 +228,48 @@ return [
         overflow: hidden !important;
     }
 
-    .ag-dnd-ghost .ag-dnd-ghost-icon {
-        font-size: 12px !important;
-        opacity: 0.7 !important;
-    }
-
-    .ag-dnd-ghost span {
+    .ag-dnd-ghost span,
+    .ag-dragged-header span {
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
-</style>
 
+    .ag-row-drag {
+        display: inline-flex !important;
+        opacity: 1 !important;
+        margin-right: 6px !important;
+    }
+
+
+    .ag-cell {
+        display: flex;
+        align-items: center;
+    }
+
+    .drag-cell .ag-row-drag {
+        margin-left: 0 !important;
+    }
+
+    .drag-cell {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .custom-drag-handle {
+        cursor: move;
+        font-size: 18px;
+        margin-right: 8px;
+        opacity: 0.8;
+        user-select: none;
+    }
+</style>
 
 @endpush
 
 
 {{-- ===================================================================================== --}}
-{{-- JAVASCRIPT -> GROUPING + PIVOT ENABLED (UI UNTOUCHED) --}}
+{{-- JAVASCRIPT -> GROUPING + PIVOT + ROW-DRAG --}}
 {{-- ===================================================================================== --}}
 @push('after_scripts')
 <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@31.3.2/dist/ag-grid-enterprise.min.js"></script>
@@ -260,16 +283,42 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const columnDefs = [
 
-        { headerName: "", field: "id", width: 50, pinned: "left",
-            checkboxSelection: true, headerCheckboxSelection: true,
-            sortable: false, filter: false, enableRowGroup: true },
+        // S.No column (dynamic, pinned left) - not movable, shows current row order
+        {
+            headerName: "S.No",
+            field: "sno",
+            width: 80,
+            pinned: "left",
+            suppressMovable: true,
+            sortable: false,
+            filter: false,
+            valueGetter: function(params) {
+                // rowIndex is updated by ag-grid after reorder; +1 to make it human-friendly
+                return (params.node && typeof params.node.rowIndex === 'number') ? (params.node.rowIndex + 1) : '';
+            },
+            cellClass: 'text-center'
+        },
 
-        { headerName: "Name", field: "name", flex: 2, enableRowGroup: true },
+        // { headerName: "", field: "id", width: 50, pinned: "left",
+        //     checkboxSelection: true, headerCheckboxSelection: true,
+        //     sortable: false, filter: false, enableRowGroup: true },
+
+        // Row drag handle on Name column (user drags from here)
+        {
+            headerName: "Student Name",
+            field: "name",
+            flex: 2,
+            enableRowGroup: true,
+            sortable: true,
+            filter: true
+        },
+
+
         { headerName: "Roll No.", field: "roll_number", enableRowGroup: true },
-        { headerName: "Class", field: "class", filter: "agSetColumnFilter", enableRowGroup: true },
-        { headerName: "Section", field: "section", filter: "agSetColumnFilter", enableRowGroup: true },
+        { headerName: "Class Name", field: "class", filter: "agSetColumnFilter", enableRowGroup: true },
+        { headerName: "Class Section", field: "section", filter: "agSetColumnFilter", enableRowGroup: true },
         { headerName: "Phone", field: "phone", enableRowGroup: true },
-        { headerName: "Gender", field: "gender", filter: "agSetColumnFilter", enableRowGroup: true },
+        { headerName: "Student Gender", field: "gender", filter: "agSetColumnFilter", enableRowGroup: true },
         { headerName: "Admission", field: "admission_date", filter: "agDateColumnFilter", enableRowGroup: true },
 
         { headerName: "Total Marks", field: "total_marks", type: "numericColumn", aggFunc: "sum", enableRowGroup: true },
@@ -302,9 +351,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const gridOptions = {
         columnDefs,
         rowData: @json($students),
-
+        suppressRowIndexes: true,
         popupParent: document.body,
-
+        animateRows: true,
         defaultColDef: {
             flex: 1,
             minWidth: 120,
@@ -312,6 +361,8 @@ document.addEventListener('DOMContentLoaded', function () {
             sortable: true,
             filter: true,
             resizable: true,
+            enablePivot: true,
+            enableRowGroup: true,
         },
 
         pagination: true,
@@ -319,19 +370,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
         paginationPageSizeSelector: [5, 10, 25, 50, 100, 200],
 
-
-        /* ⭐⭐⭐ MAIN ADD — GROUPING ENABLED */
+        /* GROUP / PIVOT */
         rowGroupPanelShow: 'always',
-
-        /* ⭐⭐⭐ PIVOT PANEL */
         pivotPanelShow: 'always',
-
-        /* Sidebar */
         sideBar: { toolPanels: ['columns','filters'], defaultToolPanel: 'columns' },
+
+        /* ROW DRAG (managed) */
+        rowSelection: 'multiple',   // required for headerCheckboxSelection warnings to go away
+        // rowDragManaged: true,       // managed row drag & drop
+        animateRows: true,          // smooth transitions
 
         onGridReady: p => {
             gridApi = p.api;
             gridApi.sizeColumnsToFit();
+        },
+
+        onRowDragEnd: e => {
+            // refresh S.No cells after reorder so S.No shows updated positions immediately
+            if (gridApi) {
+                gridApi.refreshCells({ columns: ['sno'], force: true });
+            }
+            // If you want to persist new order to server, collect data here and send via AJAX.
+            // const newOrder = [];
+            // gridApi.forEachNode(node => newOrder.push(node.data));
+            // send newOrder to backend if desired.
         }
     };
 
